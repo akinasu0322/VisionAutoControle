@@ -1,0 +1,33 @@
+{
+    "name" : "test1(VisionClick, XYClick, Error)",
+    "commands" : [
+        {
+            "command" : "VisionClick",
+            "target" : "PaperPileIcon.png",
+            "args" : [],
+            "description" : "Click on PaperPileIcon",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "ACLPDFbutton2.png",
+            "args" : [],
+            "description" : "Click on PDF button",
+            "blocks" : []
+        },
+        {
+            "command" : "XYClick",
+            "target" : "1200, 1000",
+            "args" : [],
+            "description" : "X-Y Click",
+            "blocks" : []
+        },
+        {
+            "command" : "Error",
+            "target" : "TEST : Error",
+            "args" : [],
+            "description" : "test Error",
+            "blocks" : []
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "name" : "test1(ChangeTab)",
+    "commands" : [
+        {
+            "command" : "GetInfo",
+            "target" : "target_tab_id",
+            "args" : ["CurrentTabID"],
+            "description" : "Get target_tab_id",
+            "blocks" : []
+        },
+        {
+            "command" : "ChangeTab",
+            "target" : "",
+            "args" : [{"mode": "TabID", "value": "${ target_tab_id  }"}],
+            "description" : "",
+            "blocks" : []
+        },
+        {
+            "command" : "Sleep",
+            "target" : "",
+            "args" : ["3"],
+            "description" : "",
+            "blocks" : []
+        },
+        {
+            "command" : "ChangeTab",
+            "target" : "",
+            "args" : [{"mode": "AbsoluteIndex", "value": "3"}],
+            "description" : "",
+            "blocks" : []
+        },
+        {
+            "command" : "Sleep",
+            "target" : "",
+            "args" : ["3"],
+            "description" : "",
+            "blocks" : []
+        },
+        {
+            "command" : "ChangeTab",
+            "target" : "",
+            "args" : [{"mode": "RelativeIndex", "value": "2"}],
+            "description" : "",
+            "blocks" : []
+        },
+        {
+            "command" : "Sleep",
+            "target" : "",
+            "args" : ["3"],
+            "description" : "",
+            "blocks" : []
+        }
+    ]
+}

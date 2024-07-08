@@ -1,0 +1,162 @@
+{
+    "name":"PaperAutoSave()",
+    "commands":[
+        {
+            "command":"VisionClick",
+            "target":"PaperPileIcon.png",
+            "args":[],
+            "description":"open popup of paper pile",
+            "special":{}
+        },
+        {
+            "command":"VisionClick",
+            "target":"AddToPaperPile.png",
+            "args":[],
+            "description":"click 'add paper' button",
+            "special":{}
+        },
+        {
+            "command":"Branch",
+            "target":"",
+            "args":[
+                "if ${CURRENT_TAB_URL} == https://aclanthology.org/*",
+                "if ${CURRENT_TAB_URL} == https://arxiv.org/*"
+            ],
+            "description":"Branch by paper site",
+            "special":{
+                "branch1":[
+                    {
+                        "command":"VisionClick",
+                        "target":"ACLPDFbutton.png",
+                        "args":[],
+                        "description":"acl open pdf",
+                        "special":{}
+                    }
+                ],
+                "branch2":[
+                    {
+                        "command":"VisionClick",
+                        "target":"ArxivPDFbutton.png",
+                        "args":[],
+                        "description":"arxiv open pdf",
+                        "special":{}
+                    }
+                ],
+                "branch3":[
+                    {
+                        "command":"Error",
+                        "target":"Error: undefined paper site",
+                        "args":[],
+                        "description":"error: undefined paper site",
+                        "special":{}
+                    }
+                ]
+            }
+        },
+        {
+            "command":"VisionClick",
+            "target":"ReadableIcon.png",
+            "args":[],
+            "description":"click 'readable' button",
+            "special":{}
+        },
+        {
+            "command":"VisionClick",
+            "target":"PaperPileIcon.png",
+            "args":[],
+            "description":"open popup of paper pile",
+            "special":{}
+        },
+        {
+            "command":"VisionClick",
+            "target":"OpenPaperPile.png",
+            "args":[],
+            "description":"open paper pile",
+            "special":{}
+        },
+        {
+            "command":"XYClick",
+            "target":"900, 250",
+            "args":[],
+            "description":"select top paper",
+            "special":{}
+        },
+        {
+            "command":"Tab",
+            "target":"",
+            "args":[],
+            "description":"move to Japanese paper Tab",
+            "special":{}
+        },
+        {
+            "command":"VisionClick",
+            "target":"",
+            "args":[],
+            "description":"open popup of paper pile",
+            "special":{}
+        },
+        {
+            "command":"VisionClick",
+            "target":"",
+            "args":[],
+            "description":"click 'attach paper' button",
+            "special":{}
+        },
+        {
+            "command":"VisionClick",
+            "target":"",
+            "args":[],
+            "description":"open popup of paper pile",
+            "special":{}
+        },
+        {
+            "command":"VisionClick",
+            "target":"",
+            "args":[],
+            "description":"open paper pile",
+            "special":{}
+        },
+        {
+            "command":"ObjectClick",
+            "target":"",
+            "args":[],
+            "description":"select 'attached files' of top paper",
+            "special":{}
+        },
+        {
+            "command":"ObjectClick",
+            "target":"",
+            "args":[],
+            "description":"release Japanese paper from main pdf",
+            "special":{}
+        },
+        {
+            "command":"ObjectClick",
+            "target":"",
+            "args":[],
+            "description":"select Japanese paper as main pdf",
+            "special":{}
+        },
+        {
+            "command":"CloseTab",
+            "target":"",
+            "args":[],
+            "description":"close japanese paper tab",
+            "special":{}
+        },
+        {
+            "command":"CloseTab",
+            "target":"",
+            "args":[],
+            "description":"close english paper tab",
+            "special":{}
+        },
+        {
+            "command":"CloseTab",
+            "target":"",
+            "args":[],
+            "description":"close paper pile tab",
+            "special":{}
+        }
+    ]
+}

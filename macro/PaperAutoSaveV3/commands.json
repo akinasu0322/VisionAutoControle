@@ -1,0 +1,160 @@
+{
+    "name" : "test2(VisionClick, XYClick, Error, If, SetValue, Sleep, ScreenLimit, GetInfo, ChangeTab)",
+    "commands" : [
+        {
+            "command" : "GetInfo",
+            "target" : "paper_url",
+            "args" : ["CurrentTabURL"],
+            "description" : "Get original url of paper",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "PaperPileIcon.png",
+            "args" : [],
+            "description" : "Click on PaperPileIcon",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "AddToPaperPile.png",
+            "args" : [],
+            "description" : "Click on PaperPileIcon",
+            "blocks" : []
+        },
+        {
+            "command" : "If",
+            "target" : "",
+            "args" : [
+                "'https://aclanthology' in '${paper_url}'", 
+                "'https://arxiv.org' in '${ paper_url }'"
+            ],
+            "description" : "Branch by website",
+            "blocks" : [
+                [
+                    {
+                        "command" : "VisionClick",
+                        "target" : "ACLPDFbutton2.png",
+                        "args" : [],
+                        "description" : "acl open pdf",
+                        "blocks" : []
+                    },
+                    {
+                        "command" : "VisionClick",
+                        "target" : "ACLPDFbutton2.png",
+                        "args" : [],
+                        "description" : "acl open pdf",
+                        "blocks" : []
+                    }
+                ],
+                [
+                    {
+                        "command" : "VisionClick",
+                        "target" : "ArxivPDFbutton.png",
+                        "args" : [],
+                        "description" : "arxiv open pdf",
+                        "blocks" : []
+                    },
+                    {
+                        "command" : "VisionClick",
+                        "target" : "ArxivPDFbutton.png",
+                        "args" : [],
+                        "description" : "arxiv open pdf",
+                        "blocks" : []
+                    }
+                ]
+            ]
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "ReadableIcon.png",
+            "args" : [],
+            "description" : "Click on ReadableIcon",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionWait",
+            "target" : "TransratedPageFutureChrome.png",
+            "args" : [3, 30],
+            "description" : "Wait for transration",
+            "blocks" : []
+        },
+        {
+            "command" : "GetInfo",
+            "target" : "transrate_pdf_tab_id",
+            "args" : ["CurrentTabID"],
+            "description" : "Get transrate_pdf_tab_id",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "PaperPileIcon.png",
+            "args" : [],
+            "description" : "Click on PaperPileIcon",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "OpenPaperPile.png",
+            "args" : [],
+            "description" : "Open paper pile",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "PaperPileCheckBox.png",
+            "args" : ["vertical", 2],
+            "description" : "Select paper which I want to attach transrated pdf",
+            "blocks" : []
+        },
+        {
+            "command" : "ChangeTab",
+            "target" : "${ transrate_pdf_tab_id  }",
+            "args" : ["TabID"],
+            "description" : "Move to transrate pdf tab",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "PaperPileIcon.png",
+            "args" : [],
+            "description" : "Click on PaperPileIcon",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "PaperPileAttachToPaper.png",
+            "args" : [],
+            "description" : "Click on Attach To Paper button",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "OpenPaperPile.png",
+            "args" : [],
+            "description" : "Open paper pile",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "PaperPileAttachedFiles.png",
+            "args" : ["vertical", 1],
+            "description" : "Click on Attached Files Icon",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "PaperPileCancellMainPDF.png",
+            "args" : ["vertical", 2],
+            "description" : "Cancell main pdf",
+            "blocks" : []
+        },
+        {
+            "command" : "VisionClick",
+            "target" : "PaperPileSetAsMainPDF.png",
+            "args" : ["vertical", 1],
+            "description" : "Click on Set As Main PDF button",
+            "blocks" : []
+        }
+    ]
+}
