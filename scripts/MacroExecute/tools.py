@@ -6,24 +6,26 @@ import json
 import osascript
 from .OriginalError import *
 import re
+import time
 
 cnf = json.load(open('scripts/config.json'))
 device = cnf['device']
 template_path = '../macro/PaperAutoSavePictures/test3.png'
 
 # テンプレートマッチングで最も一致する結果を返す関数
-"""
-input:
-    gray_template_img: テンプレート画像のグレースケール画像
-    gray_target_img: 検出対象画像のグレースケール画像
-    threshold: 一致と判定する信頼度の閾値
-    scales: テンプレート画像の拡大率のリスト
-    proximity: 近接したマッチング結果をグループ化する距離
-return:
-    best_matches: [(pt, confidence, scale, w, h), ...]
-    一致した部分の情報を格納したリスト（sorted by confidence）
-"""
+
 def find_best_matches(gray_template_img, gray_target_img, threshold=0.9, scales=[0.7, 1.0, 1.3, 1.6, 2.0, 2.5, 3.0], proximity=10):
+    """
+    input:
+        gray_template_img: テンプレート画像のグレースケール画像
+        gray_target_img: 検出対象画像のグレースケール画像
+        threshold: 一致と判定する信頼度の閾値
+        scales: テンプレート画像の拡大率のリスト
+        proximity: 近接したマッチング結果をグループ化する距離
+    return:
+        best_matches: [{"pt":pt, "confidence":confidence, "scale":scale, "size":(w, h)}, ...]
+        一致した部分の情報を格納したリスト（sorted by confidence）
+    """
     matches = []
 
     for scale in scales:
@@ -38,13 +40,13 @@ def find_best_matches(gray_template_img, gray_target_img, threshold=0.9, scales=
         # 一致する場所と信頼度を収集
         for pt in zip(*locations[::-1]):
             confidence = result[pt[1], pt[0]]
-            matches.append((pt, confidence, scale, w, h))
+            matches.append({"pt": pt, "confidence": confidence, "scale": scale, "size": (w, h)})
 
     # 近接したマッチング結果をグループ化し、最も高い信頼度の結果を選択
     best_matches = []
     while matches:
-        best_match = max(matches, key=lambda x: x[1])
-        matches = [m for m in matches if np.linalg.norm(np.array(best_match[0]) - np.array(m[0])) > proximity]
+        best_match = max(matches, key=lambda x: x["confidence"])
+        matches = [m for m in matches if np.linalg.norm(np.array(best_match["pt"]) - np.array(m["pt"])) > proximity]
         best_matches.append(best_match)
 
     return best_matches
@@ -59,13 +61,64 @@ def abs_click(x, y, device=device):
 
 # 検出結果を表示する関数
 def show_detected_img(best_matches, target_img):
-    for (pt, confidence, scale, w, h) in best_matches:
+    for match in best_matches:
+        pt = match["pt"]
+        confidence = match["confidence"]
+        scale = match["scale"]
+        w, h = match["size"]
         print(f"Location: {pt}, Confidence: {confidence}, Scale: {scale}, w: {w}, h: {h}")
         cv2.rectangle(target_img, pt, (pt[0] + w, pt[1] + h), (0, 255, 0), 2)
     cv2.imshow('Detected', target_img)
     print("エンターキーを押すとプログラムが終了します...")
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+
+# 指定ポイントが対象画像のどの部分を指すかを表示する関数
+def show_point(pt, target_img):
+    cv2.circle(target_img, pt, 20, (0, 255, 0), 4)
+    cv2.imshow('Detected', target_img)
+    print("エンターキーを押すとプログラムが終了します...")
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+# 画像を表示する関数
+def show_img(img):
+    cv2.imshow('Detected', img)
+    print("エンターキーを押すとプログラムが終了します...")
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+# 座標とサイズから中央座標を計算する関数
+def get_good_point(pt, size, option):
+    if option == "top_left":
+        return pt
+    elif option == "top_right":
+        return (pt[0] + size[0], pt[1])
+    elif option == "bottom_left":
+        return (pt[0], pt[1] + size[1])
+    elif option == "bottom_right":
+        return (pt[0] + size[0], pt[1] + size[1])
+    elif option == "center":
+        return (pt[0] + size[0] // 2, pt[1] + size[1] // 2)
+    elif option == "top_center":
+        return (pt[0] + size[0] // 2, pt[1])
+    elif option == "bottom_center":
+        return (pt[0] + size[0] // 2, pt[1] + size[1])
+    elif option == "left_center":
+        return (pt[0], pt[1] + size[1] // 2)
+    elif option == "right_center":
+        return (pt[0] + size[0], pt[1] + size[1] // 2)
+    else:
+        valid_options = ["top_left", "top_right", "bottom_left", "bottom_right", "center", "top_center", "bottom_center", "left_center", "right_center"]
+        raise ValueError(f"Unknown option: {option}. Valid options are {valid_options}.")
+
+
+# 座標を並行移動させる関数
+def get_parallel_point(base_pt, ralative_pt):
+    return (base_pt[0] + ralative_pt[0], base_pt[1] + ralative_pt[1])
 
 
 # 変数を置換する関数
@@ -124,110 +177,89 @@ def get_current_tab_url():
     return result
 
 # 現在のwindowのchromeブラウザのタブIDを取得する関数
-def get_open_tabs():
+def get_open_tabs(target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture):
     """
-    tab_list: [{tab_id, tab_url, ...}, ...]
-        tab_id: int
-        tab_url: str
+    input:
+        current_tab_picture: 現在のタブ固有の画像（これが含まれる部分を現在のタブとする）
+        separater_pictures: タブの区切りを示す画像のリスト（これで区切られた区間がタブとして認識される）
+        target_img: タブの位置情報の取得対象画像（スクリーンショット画像）
+    return:
+        tab_list: [(a1, b1), (a2, b2), ...] 全てのタブの位置情報のリスト
+        current_tab_idx: idx リスト内における現在のタブのインデックス
     """
-    script = """
-    tell application "Google Chrome"
-        set tabList to {}
-        repeat with currentWindow in every window
-            repeat with currentTab in every tab of currentWindow
-                set currentTabID to id of currentTab
-                set currentTabURL to URL of currentTab
-                set currentTabInfo to {currentTabID, currentTabURL}
-                set tabList to tabList & {currentTabInfo}
-            end repeat
-        end repeat
-    end tell
-    return tabList
-    """
-    status, result, error = osascript.run(script)
-    if status != 0:
-        raise OsaScriptError(f"Error in osascript: {error}")
+    # 現在タブの左右位置を取得
+    best_matches = find_best_matches(current_tab_left_picture, target_img)
+    current_tab_left_point = get_good_point(best_matches[0]["pt"], best_matches[0]["size"], "center")
+    best_matches = find_best_matches(current_tab_right_picture, target_img)
+    current_tab_right_point = get_good_point(best_matches[0]["pt"], best_matches[0]["size"], "center")
+    # タブセパレータの位置情報を取得
+    best_matches = find_best_matches(separater_picture, target_img)
+    separater_points = [get_good_point(separater_point["pt"], separater_point["size"], "center") for separater_point in best_matches] + [current_tab_left_point, current_tab_right_point]
+    error_margin = 10
+    trimmed_separated_points = [separater_point for separater_point in separater_points if separater_point[1] < min(list(zip(*separater_points))[1])+error_margin] # 一番上の列にないものは除外
+    separater_points = sorted(trimmed_separated_points, key=lambda x: x[0])
+    # 一番左に現在タブがあるかどうかを判定
+    best_matches = find_best_matches(first_tab_is_current_tab_picture, target_img, threshold=0.98)
+    first_tab_is_current_tab_point = get_good_point(best_matches[0]["pt"], best_matches[0]["size"], "center") if best_matches else None
+
+    # タブと紐づけるセパレータのリストを作成
+    if first_tab_is_current_tab_point: # セパレータの左にあるものをタブとして認識したいので、一番左に現在タブがある場合current_tab_left_pointのセパレータは左にタブを持たないため無視したい
+        assert separater_points[0][0] == current_tab_left_point[0]
+        assert separater_points[1][0] == current_tab_right_point[0]
+        tab_identify_separater_points = separater_points[1:]
+    else: # 2番目以降に現在タブがある場合
+        tab_identify_separater_points = separater_points
+    # 現在タブのインデックスを取得
+    current_tab_idx = None
+    for i, point in enumerate(tab_identify_separater_points):
+        if point == current_tab_right_point:
+            current_tab_idx = i
+            break
+    else:
+        raise UnexpectedSystemError("Current tab is not found in the tab list.")
+    # タブのリストを作成
+    adjusting_pt = (-10, 0)# タブセパレーターの何ピクセル左をタブとして認識するかを決める
+    tab_list = [get_parallel_point(tab_identify_separater_point, adjusting_pt) for tab_identify_separater_point in tab_identify_separater_points]
+    return tab_list, current_tab_idx
+
     
-    def transform_tab_data(data):
-        items = data.split(', ')
-        tab_info_list = []
-        for i in range(0, len(items), 2):
-            tab_id = items[i]
-            tab_url = items[i + 1]
-            tab_info_list.append({"tab_id": tab_id, "tab_url": tab_url})
-        return tab_info_list
     
-    tab_list = transform_tab_data(result)
+
+
+    # タブの総数が1つの場合(separated_pointsが2個)
+
+    
     return tab_list
 
 
-# タブのIDからタブの絶対インデックスを取得する関数
-def get_absolute_tab_index(tab_id, tab_list):
-    for i, tab_info in enumerate(tab_list):
-        if tab_info["tab_id"] == tab_id:
-            return i
-    raise ValueError(f"Tab with ID {tab_id} not found.")
-
-
 # タブの切り替えを行う関数
-def change_tab(tab_information:int, info_type: str):
-    def change_tab_by_tab_id(tab_id):
-        script = f"""
-        -- 事前に取得したタブIDを設定
-        set targetTabID to {tab_id}
+def change_tab(tab_information:int, info_type: str, target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture):
+    # タブの切り替えを行う
+    def _change_tab_core(tab_list, absolute_index, current_tab_idx):
+        if absolute_index >= len(tab_list) or absolute_index < -len(tab_list):
+            raise ValueError(f"Absolute tab index {absolute_index} is out of range.")
+        if absolute_index == current_tab_idx:
+            return
+        abs_click(tab_list[absolute_index][0], tab_list[absolute_index][1])
+        time.sleep(0.1)
 
-        tell application "Google Chrome"
-            -- 現在開いているすべてのウィンドウを取得
-            set windowList to every window
-            repeat with currentWindow in windowList
-                -- 現在のウィンドウのすべてのタブを取得
-                set tabList to every tab of currentWindow
-                repeat with currentTab in tabList
-                    -- 現在のタブのIDを取得
-                    set currentTabID to id of currentTab
-                    -- タブIDが一致するか確認
-                    if currentTabID is targetTabID then
-                        -- 一致するタブをアクティブに設定
-                        set active tab index of currentWindow to (index of currentTab)
-                        -- スクリプトを終了
-                        return "Tab switched to the target tab with ID " & targetTabID
-                    end if
-                end repeat
-            end repeat
-            return "Target tab with ID " & targetTabID & " not found."
-        end tell
-        """
-        status, result, error = osascript.run(script)
-        if status != 0:
-            raise OsaScriptError(f"Error in osascript: {error}")
-
-    def change_tab_by_absolute_tab_index(tab_index):
-        tab_list = get_open_tabs()
-        if tab_index >= len(tab_list) or tab_index < 0:
-            raise ValueError(f"Absolute tab index {tab_index} is out of range.")
-        tab_id = tab_list[tab_index]["tab_id"]
-        change_tab_by_tab_id(tab_id)
+    def change_tab_by_absolute_tab_index(absolute_index, target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture):
+        tab_list, current_tab_idx = get_open_tabs(target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture)
+        _change_tab_core(tab_list, absolute_index, current_tab_idx)
     
-    def change_tab_by_relative_tab_index(relative_index):
-        tab_list = get_open_tabs()
-        if relative_index >= len(tab_list) or relative_index < 0:
-            raise ValueError(f"Relative tab index {relative_index} is out of range.")
-        current_tab_id = get_current_tab_id()
-        current_tab_index = get_absolute_tab_index(current_tab_id, tab_list)
-        target_tab_index = current_tab_index + relative_index
-        if target_tab_index >= len(tab_list) or target_tab_index < 0:
-            raise ValueError(f"Relative tab index {relative_index} is out of range.")
-        target_tab_id = tab_list[target_tab_index]["tab_id"]
-        change_tab_by_tab_id(target_tab_id)
-    
+    def change_tab_by_relative_tab_index(relative_index, target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture):
+        tab_list, current_tab_idx = get_open_tabs(target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture)
+        absolute_idx = current_tab_idx + relative_index
+        if absolute_idx < 0:
+            raise ValueError(f"Current tab index: {current_tab_idx}, Relative tab index: {relative_index}. Finally, absolute tab index is {absolute_idx}. It is out of range.")
+        _change_tab_core(tab_list, absolute_idx, current_tab_idx)
 
-    if info_type == "TabID":
-        change_tab_by_tab_id(int(tab_information))
+
+    if info_type == "AbsoluteIndex":
+        change_tab_by_absolute_tab_index(int(tab_information), target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture)
     elif info_type == "RelativeIndex":
-        change_tab_by_relative_tab_index(int(tab_information))
-    elif info_type == "AbsoluteIndex":
-        change_tab_by_absolute_tab_index(int(tab_information))
+        change_tab_by_relative_tab_index(int(tab_information), target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture)
     else:
-        valid_info_types = ["TabID", "RelativeIndex", "AbsoluteIndex"]
+        valid_info_types = ["RelativeIndex", "AbsoluteIndex"]
         raise ValueError(f"Unknown tab information type: {info_type}. Valid decisions are {valid_info_types}.")
 

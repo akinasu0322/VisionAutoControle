@@ -2,51 +2,37 @@
     "name" : "test1(ChangeTab)",
     "commands" : [
         {
-            "command" : "GetInfo",
-            "target" : "target_tab_id",
-            "args" : ["CurrentTabID"],
-            "description" : "Get target_tab_id",
+            "command" : "XYClick",
+            "target" : "900, 400",
+            "args" : [],
+            "description" : "touch to activate the window",
             "blocks" : []
         },
         {
             "command" : "ChangeTab",
             "target" : "",
-            "args" : [{"mode": "TabID", "value": "${ target_tab_id  }"}],
+            "args" : [{"mode": "AbsoluteIndex", "value": "0"}],
             "description" : "",
             "blocks" : []
         },
         {
             "command" : "Sleep",
             "target" : "",
-            "args" : ["3"],
+            "args" : ["1"],
             "description" : "",
             "blocks" : []
         },
         {
             "command" : "ChangeTab",
             "target" : "",
-            "args" : [{"mode": "AbsoluteIndex", "value": "3"}],
+            "args" : [{"mode": "RelativeIndex", "value": "3"}],
             "description" : "",
             "blocks" : []
         },
         {
             "command" : "Sleep",
             "target" : "",
-            "args" : ["3"],
-            "description" : "",
-            "blocks" : []
-        },
-        {
-            "command" : "ChangeTab",
-            "target" : "",
-            "args" : [{"mode": "RelativeIndex", "value": "2"}],
-            "description" : "",
-            "blocks" : []
-        },
-        {
-            "command" : "Sleep",
-            "target" : "",
-            "args" : ["3"],
+            "args" : ["1"],
             "description" : "",
             "blocks" : []
         }

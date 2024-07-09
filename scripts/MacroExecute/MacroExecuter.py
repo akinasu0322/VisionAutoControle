@@ -26,28 +26,40 @@ class CommandBlock:
     
 
 class BlockMemory:
-    def __init__(self, init_main_memory:dict[str, any]={}):
-        self.main:dict[str, any] = init_main_memory
-    
-    def set(self, key:str, value:any):
+    def __init__(self):
+        self.main:dict[str, any] = {}
+        self.env:dict[str, any] = {}
+
+    def set_main(self, key:str, value:any):
         self.main[key] = value
     
-    def get(self, key:str):
+    def get_main(self, key:str):
         return self.main[key]
     
-    def has(self, key:str):
+    def has_main(self, key:str):
         return key in self.main
+    
+    def set_env(self, key:str, value:any):
+        self.env[key] = value
+
+    def get_env(self, key:str):
+        return self.env[key]
+    
+    def has_env(self, key:str):
+        return key in self.env
+    
+    def all_dict(self):
+        return {**self.env, **self.main}
     
     def __deepcopy__(self, memo):
         if id(self) in memo:
             return memo[id(self)]
-        new_copy = BlockMemory(copy.deepcopy(self.main, memo))
+        new_copy = BlockMemory()
         memo[id(self)] = new_copy
-        # 他の属性もdeepcopyする場合は以下に追加
-        # new_copy.hoge = copy.deepcopy(self.hoge, memo)
+        new_copy.main = copy.deepcopy(self.main, memo)
+        new_copy.env = copy.deepcopy(self.env, memo)
         return new_copy
 
-    
 
 class MacroExecuter:
     def __init__(self, options:dict[str, any]={}):
@@ -55,13 +67,12 @@ class MacroExecuter:
         pass
 
 
-    def set_macro(self, macro:list[dict[str, any]]):
-        command_block = CommandBlock(macro)
-        self.block = command_block
+    def set_macro(self, macro:CommandBlock):
+        self.block = macro
 
 
-    def set_memory(self, init_memory:dict[str, any]):
-        self.memory = BlockMemory(init_memory)
+    def set_memory(self, memory:BlockMemory):
+        self.memory = memory
 
 
     def execute(self):
@@ -95,7 +106,7 @@ class VisionClick(Command):
         if len(self.args) != 0 and len(self.args) != 2:
             raise SyntaxError("VisionClick command must have 0 or 2 arguments.")
         # 画像ファイルの読み込み
-        template_path = f"macro/{memory.main['macro_name']}/PatternPictures/{self.target}"
+        template_path = f"macro/{memory.get_env['macro_name']}/PatternPictures/{self.target}"
         gray_template_img = cv2.imread(template_path, cv2.IMREAD_GRAYSCALE)
         target_img = ImageGrab.grab()
         target_img = np.array(target_img)
@@ -123,7 +134,7 @@ class VisionClick(Command):
             else:
                 valid_axis = ["vertical", "horizontal"]
                 raise ValueError(f"Unknown axis. Valid axis are {valid_axis}.")
-        pt, w, h = target_match[0], target_match[3], target_match[4]
+        pt, w, h = target_match["pt"], target_match["size"][0], target_match["size"][1]
         x, y = pt[0] + w // 2, pt[1] + h // 2
         print(f"Clicking at ({x}, {y})")
         time.sleep(0.01)
@@ -144,7 +155,7 @@ class If(Command):
         conditions = self.args
         replaced_conditions = []
         for condition in conditions:
-            replaced_conditions.append(replace_val(condition, memory.main))
+            replaced_conditions.append(replace_val(condition, memory.all_dict()))
         # 各条件の評価
         eval_results = []
         for condition in replaced_conditions:
@@ -159,8 +170,10 @@ class If(Command):
             raise UnexpectedSystemError("All branches are invalid. Please check the conditions or set \"else block\".")
         # ブロックの実行
         branch_executer = MacroExecuter()
-        branch_executer.set_macro(valid_block)
-        branch_executer.set_memory(copy.deepcopy(memory.main))
+        branch_memory = copy.deepcopy(memory)
+        branch_block = CommandBlock(valid_block)
+        branch_executer.set_memory(branch_memory)
+        branch_executer.set_macro(branch_block)
         branch_executer.execute()
 
 
@@ -168,10 +181,18 @@ class SetValue(Command):
     def execute(self, memory:BlockMemory):
         if len(self.args) != 1:
             raise SyntaxError("SetValue command must have exactly one argument.")
-        memory.set(self.target, self.args[0])
+        memory.set_main(self.target, self.args[0])
 
 
-################################ ブラウザ用コマンド ################################
+class Sleep(Command):
+    def execute(self, memory:BlockMemory):
+        if len(self.args) != 1:
+            raise SyntaxError("Sleep command must have exactly 1 argument which is the time to sleep.")
+        sleep_time = float(self.args[0])
+        time.sleep(sleep_time)
+
+
+################################ Chrome用コマンド ################################
 class GetInfo(Command):
     def execute(self, memory: BlockMemory):
         # エラーチェック
@@ -189,7 +210,7 @@ class GetInfo(Command):
             valid_labels = ["CurrentTabURL", "CurrentTabID"]
             raise ValueError(f"Unknown info label: {info_label}. Valid labels are {valid_labels}.")
         # メモリに保存
-        memory.set(save_name, info)
+        memory.set_main(save_name, info)
 
 
 class VisionWait(Command):
@@ -219,23 +240,29 @@ class ChangeTab(Command):
         # エラーチェック
         if len(self.args) != 1:
             raise SyntaxError("ChangeTab command must have exactly 1 arguments which is the pair of tab information and the type of tab information.")
-        change_tab_mode = self.args[0]["mode"]
+        info_type= self.args[0]["mode"]
         tab_info = self.args[0]["value"]
         # タブ移動
-        valid_modes = ["TabID", "AbsoluteIndex", "RelativeIndex"]
-        if change_tab_mode in valid_modes:
-            concreate_tab_info = replace_val(tab_info, memory.main)
-            change_tab(concreate_tab_info, change_tab_mode)
+        valid_modes = ["AbsoluteIndex", "RelativeIndex"]
+        if info_type in valid_modes:
+            concreate_tab_info = int(replace_val(tab_info, memory.all_dict()))
+            target_img = ImageGrab.grab()
+            target_img = np.array(target_img)
+            gray_target_img = cv2.cvtColor(target_img, cv2.COLOR_BGR2GRAY)
+            separater_picture_path = memory.get_env('tab_separater_picture_path')
+            current_tab_left_picture_path = memory.get_env('current_tab_left_picture_path')
+            current_tab_right_picture_path = memory.get_env('current_tab_right_picture_path')
+            first_tab_is_current_tab_picture_path= memory.get_env('first_tab_is_current_tab_picture_path')
+            separater_picture = cv2.imread(separater_picture_path, cv2.IMREAD_GRAYSCALE)
+            current_tab_left_picture = cv2.imread(current_tab_left_picture_path, cv2.IMREAD_GRAYSCALE)
+            current_tab_right_picture = cv2.imread(current_tab_right_picture_path, cv2.IMREAD_GRAYSCALE)
+            first_tab_is_current_tab_picture = cv2.imread(first_tab_is_current_tab_picture_path, cv2.IMREAD_GRAYSCALE)
+            change_tab(concreate_tab_info, info_type, gray_target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture)
         else:
-            raise ValueError(f"Unknown tab decision: {change_tab_mode}. Valid decisions are {valid_modes}.")
+            raise ValueError(f"Unknown tab decision: {info_type}. Valid decisions are {valid_modes}.")
 
 
-class Sleep(Command):
-    def execute(self, memory:BlockMemory):
-        if len(self.args) != 1:
-            raise SyntaxError("Sleep command must have exactly 1 argument which is the time to sleep.")
-        sleep_time = float(self.args[0])
-        time.sleep(sleep_time)
+
 
 # コマンドの登録
 command_list = {

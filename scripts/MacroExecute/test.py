@@ -1,5 +1,6 @@
 import re
 
-args = ["vertical", 1]
-print(len(args))
-print(len(args) != 0 and len(args) != 2)
+test = [(1, 2), (3, 4), (5, 6)]
+
+test = list(zip(*test))[1]
+print(test)
