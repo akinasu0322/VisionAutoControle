@@ -104,32 +104,39 @@ class VisionClick(Command):
         if len(self.args) != 1:
             raise SyntaxError("VisionClick command must have 1 arguments.")
         # 画像ファイルの読み込み
-        template_path = f"macro/{memory.get_env('macro_name')}/PatternPictures/{self.args[0]['search_picture']}"
-        template_img = cv2.imread(template_path, cv2.IMREAD_COLOR)
         target_img = cv2.cvtColor(np.array(ImageGrab.grab()), cv2.COLOR_RGB2BGR)
-
-        # 画面キャプチャの取得
-        best_matches = find_best_matches(template_img, target_img, threshold=float(self.args[0]["confidence"]))
-        if best_matches == []:
+        template_imgs = [cv2.imread(f"macro/{memory.get_env('macro_name')}/PatternPictures/{picture_name}", cv2.IMREAD_COLOR) for picture_name in self.args[0]["search_pictures"]]
+        all_best_matches = []
+        for template_img in template_imgs:
+            # 画面キャプチャの取得
+            best_matches = find_best_matches(template_img, target_img, threshold=float(self.args[0]["confidence"]))
+            all_best_matches.extend(best_matches)
+        
+        all_best_matches = sorted(all_best_matches, key=lambda x: x["confidence"], reverse=True)
+        if all_best_matches == []:
             print("No matches found.")
+            # 信頼度を下げて再検索
             minimum_confidence = 0.5
-            minimum_best_matches = find_best_matches(template_img, target_img, threshold=minimum_confidence)
-            if minimum_best_matches == []:
+            minimum_all_best_matches = []
+            for template_img in template_imgs:
+                minimum_best_matches = find_best_matches(template_img, target_img, threshold=minimum_confidence)
+                minimum_all_best_matches.extend(minimum_best_matches)
+            if minimum_all_best_matches == []:
                 raise Exception(f"No matches found. by using minimum confidence({minimum_confidence}).")
             else:
-                show_detected_img(minimum_best_matches, target_img)
+                show_detected_img(minimum_all_best_matches, target_img)
                 raise Exception(f"No matches found. by confidence({self.args[0]['confidence']}). However, by loosen confidence({minimum_confidence}), detected.")
         
         # クリック
         target_match = None
         if self.args[0]["select_axis"] == "":
-            target_match = best_matches[0]
+            target_match = all_best_matches[0]
         elif self.args[0]["select_axis"] == "vertical":
             best_matches = sorted(best_matches, key=lambda x: x["pt"][1])
-            target_match = best_matches[int(self.args[0]["select_index"])]
+            target_match = all_best_matches[int(self.args[0]["select_index"])]
         elif self.args[0]["select_axis"] == "horizontal":
             best_matches = sorted(best_matches, key=lambda x: x["pt"][0])
-            target_match = best_matches[self.args[0]["select_index"]]
+            target_match = all_best_matches[self.args[0]["select_index"]]
         else:
             valid_axis = ["", "vertical", "horizontal"]
             raise ValueError(f"Unknown axis. Valid axis are {valid_axis}.")

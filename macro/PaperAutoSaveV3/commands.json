@@ -8,18 +8,23 @@
         },
         {
             "command" : "VisionClick",
-            "args" : [{"search_picture": "PaperPileIcon.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "args" : [{"search_pictures": ["PaperPileIcon.png"], "select_axis": "", "select_index": "", "confidence": "0.9"}],
             "description" : "Click on PaperPileIcon"
         },
         {
             "command" : "VisionClick",
-            "args" : [{"search_picture": "AddToPaperPile.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "args" : [{"search_pictures": ["AddToPaperPile.png"], "select_axis": "", "select_index": "", "confidence": "0.9"}],
             "description" : "Click on PaperPileIcon"
         },
         {
             "command" : "VisionWait",
             "args" : [{"search_picture": "PaperPileImported.png", "interval": "3", "time_limit": "30", "confidence": "0.9", "num_target_object": "1", "init_sleep_time": "1.0"}],
             "description" : "Wait for import complete"
+        },
+        {
+            "command" : "VisionClick",
+            "args" : [{"search_pictures": ["PaperPileIconOpend.png"], "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "description" : "Close PaperPile popup"
         },
         {
             "command" : "If",
@@ -29,12 +34,7 @@
                     "block": [
                         {
                             "command" : "VisionClick",
-                            "args" : [{"search_picture": "ACLPDFbutton.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
-                            "description" : "acl open pdf"
-                        },
-                        {
-                            "command" : "VisionClick",
-                            "args" : [{"search_picture": "ACLPDFbutton.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+                            "args" : [{"search_pictures": ["ACLPDFbutton.png"], "select_axis": "", "select_index": "", "confidence": "0.9"}],
                             "description" : "acl open pdf"
                         },
                         {
@@ -49,12 +49,7 @@
                     "block": [
                         {
                             "command" : "VisionClick",
-                            "args" : [{"search_picture": "ArxivPDFbutton.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
-                            "description" : "arxiv open pdf"
-                        },
-                        {
-                            "command" : "VisionClick",
-                            "args" : [{"search_picture": "ArxivPDFbutton.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+                            "args" : [{"search_pictures": ["ArxivPDFbutton.png", "ArxivPDFbuttonClicked.png", "ArxivPDFbutton2.png"], "select_axis": "", "select_index": "", "confidence": "0.9"}],
                             "description" : "arxiv open pdf"
                         },
                         {
@@ -79,7 +74,7 @@
         },
         {
             "command" : "VisionClick",
-            "args" : [{"search_picture": "ReadableIcon.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "args" : [{"search_pictures": ["ReadableIcon.png"], "select_axis": "", "select_index": "", "confidence": "0.9"}],
             "description" : "Click on ReadableIcon"
         },
         {
@@ -94,17 +89,17 @@
         },
         {
             "command" : "VisionClick",
-            "args" : [{"search_picture": "PaperPileIcon.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "args" : [{"search_pictures": ["PaperPileIcon.png"], "select_axis": "", "select_index": "", "confidence": "0.9"}],
             "description" : "Click on PaperPileIcon"
         },
         {
             "command" : "VisionClick",
-            "args" : [{"search_picture": "OpenPaperPile.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "args" : [{"search_pictures": ["OpenPaperPile.png"], "select_axis": "", "select_index": "", "confidence": "0.9"}],
             "description" : "Open paper pile"
         },
         {
             "command" : "VisionClick",
-            "args" : [{"search_picture": "PaperPileCheckBox.png", "select_axis": "vertical", "select_index": "1", "confidence": "0.9"}],
+            "args" : [{"search_pictures": ["PaperPileCheckBox.png"], "select_axis": "vertical", "select_index": "1", "confidence": "0.9"}],
             "description" : "Select paper which I want to attach transrated pdf"
         },
         {
@@ -114,12 +109,12 @@
         },
         {
             "command" : "VisionClick",
-            "args" : [{"search_picture": "PaperPileIcon.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "args" : [{"search_pictures": ["PaperPileIcon.png"], "select_axis": "", "select_index": "", "confidence": "0.9"}],
             "description" : "Click on PaperPileIcon"
         },
         {
             "command" : "VisionClick",
-            "args" : [{"search_picture": "PaperPileAttachToPaper.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "args" : [{"search_pictures": ["PaperPileAttachToPaper.png"], "select_axis": "", "select_index": "", "confidence": "0.9"}],
             "description" : "Click on Attach To Paper button"
         },
         {
@@ -129,7 +124,7 @@
         },
         {
             "command" : "VisionClick",
-            "args" : [{"search_picture": "PaperPileCancellMainPDF.png", "select_axis": "vertical", "select_index": "1", "confidence": "0.9"}],
+            "args" : [{"search_pictures": ["PaperPileCancellMainPDF.png"], "select_axis": "vertical", "select_index": "1", "confidence": "0.9"}],
             "description" : "Cancell main pdf"
         },
         {
@@ -139,7 +134,7 @@
         },
         {
             "command" : "VisionClick",
-            "args" : [{"search_picture": "PaperPileSetAsMainPDF.png", "select_axis": "vertical", "select_index": "1", "confidence": "0.9"}],
+            "args" : [{"search_pictures": ["PaperPileSetAsMainPDF.png"], "select_axis": "vertical", "select_index": "1", "confidence": "0.9"}],
             "description" : "Click on Set As Main PDF button"
         }
     ]

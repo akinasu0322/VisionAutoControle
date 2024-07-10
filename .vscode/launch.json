@@ -8,25 +8,29 @@
             "name": "TEST: ChangeTab",
             "type": "debugpy",
             "request": "launch",
-            "program": "scripts/App.py",
+            "program": "${workspaceFolder}/scripts/App.py",
             "console": "integratedTerminal",
-            "args": "execute test2"
+            "args": ["execute", "test2"],
+            "python": "${workspaceFolder}/local_venv/bin/python"
         },
         {
             "name": "Python デバッガー: 引数を含む現在のファイル",
             "type": "debugpy",
             "request": "launch",
-            "program": "scripts/App.py",
+            "program": "${workspaceFolder}/scripts/App.py",
             "console": "integratedTerminal",
-            "args": "execute test2"
+            "args": ["execute", "test2"],
+            "python": "${workspaceFolder}/local_venv/bin/python"
         },
         {
             "name": "TEST: PaperAutoSaveV3",
             "type": "debugpy",
             "request": "launch",
-            "program": "scripts/App.py",
+            "program": "${workspaceFolder}/scripts/App.py",
             "console": "integratedTerminal",
-            "args": "execute PaperAutoSaveV3"
+            "args": ["execute", "PaperAutoSaveV3"],
+            "python": "${workspaceFolder}/local_venv/bin/python"
         }
     ]
 }
+    
