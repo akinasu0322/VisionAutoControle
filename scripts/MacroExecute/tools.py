@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from PIL import ImageGrab
+from PIL import ImageGrab, Image
 import pyautogui
 import json
 import osascript
@@ -14,11 +14,11 @@ template_path = '../macro/PaperAutoSavePictures/test3.png'
 
 # テンプレートマッチングで最も一致する結果を返す関数
 
-def find_best_matches(gray_template_img, gray_target_img, threshold=0.9, scales=[0.7, 1.0, 1.3, 1.6, 2.0, 2.5, 3.0], proximity=10):
+def find_best_matches(template_img, target_img, threshold=0.9, scales=[1.0], proximity=10):
     """
     input:
-        gray_template_img: テンプレート画像のグレースケール画像
-        gray_target_img: 検出対象画像のグレースケール画像
+        template_img: テンプレート画像のRGB画像
+        target_img: 検出対象画像のRGB画像
         threshold: 一致と判定する信頼度の閾値
         scales: テンプレート画像の拡大率のリスト
         proximity: 近接したマッチング結果をグループ化する距離
@@ -26,20 +26,29 @@ def find_best_matches(gray_template_img, gray_target_img, threshold=0.9, scales=
         best_matches: [{"pt":pt, "confidence":confidence, "scale":scale, "size":(w, h)}, ...]
         一致した部分の情報を格納したリスト（sorted by confidence）
     """
-    matches = []
+    # PIL画像をNumPy配列に変換
+    if isinstance(template_img, Image.Image):
+        template_img = np.array(template_img)
+    if isinstance(target_img, Image.Image):
+        target_img = np.array(target_img)
 
+    matches = []
     for scale in scales:
         # テンプレートのサイズを変更
-        resized_template = cv2.resize(gray_template_img, (0, 0), fx=scale, fy=scale)
-        w, h = resized_template.shape[::-1]
+        resized_template = cv2.resize(template_img, (0, 0), fx=scale, fy=scale)
+        w, h = resized_template.shape[1], resized_template.shape[0]
 
         # テンプレートマッチングの実行
-        result = cv2.matchTemplate(gray_target_img, resized_template, cv2.TM_CCOEFF_NORMED)
-        locations = np.where(result >= threshold)
+        results = []
+        for channel in range(3):
+            result_channel = cv2.matchTemplate(target_img[:,:,channel], resized_template[:,:,channel], cv2.TM_CCOEFF_NORMED)
+            results.append(result_channel)
+        combined_result = np.sum(results, axis=0) / 3.0
+        locations = np.where(combined_result >= threshold)
 
         # 一致する場所と信頼度を収集
         for pt in zip(*locations[::-1]):
-            confidence = result[pt[1], pt[0]]
+            confidence = combined_result[pt[1], pt[0]]
             matches.append({"pt": pt, "confidence": confidence, "scale": scale, "size": (w, h)})
 
     # 近接したマッチング結果をグループ化し、最も高い信頼度の結果を選択
@@ -61,13 +70,16 @@ def abs_click(x, y, device=device):
 
 # 検出結果を表示する関数
 def show_detected_img(best_matches, target_img):
+    if isinstance(target_img, Image.Image):
+        target_img = np.array(target_img)
+        
     for match in best_matches:
         pt = match["pt"]
         confidence = match["confidence"]
         scale = match["scale"]
         w, h = match["size"]
         print(f"Location: {pt}, Confidence: {confidence}, Scale: {scale}, w: {w}, h: {h}")
-        cv2.rectangle(target_img, pt, (pt[0] + w, pt[1] + h), (0, 255, 0), 2)
+        cv2.rectangle(target_img, pt, (pt[0] + w, pt[1] + h), (154, 205, 50), 4)
     cv2.imshow('Detected', target_img)
     print("エンターキーを押すとプログラムが終了します...")
     cv2.waitKey(0)
@@ -76,7 +88,7 @@ def show_detected_img(best_matches, target_img):
 
 # 指定ポイントが対象画像のどの部分を指すかを表示する関数
 def show_point(pt, target_img):
-    cv2.circle(target_img, pt, 20, (0, 255, 0), 4)
+    cv2.circle(target_img, pt, 20, (154, 205, 50), 4)
     cv2.imshow('Detected', target_img)
     print("エンターキーを押すとプログラムが終了します...")
     cv2.waitKey(0)
@@ -175,6 +187,13 @@ def get_current_tab_url():
     if result == "No active Chrome window found.":
         raise OsaScriptError("No active Chrome window found.")
     return result
+
+
+# 現在タブの絶対インデックスを取得する関数
+def get_current_tab_index(target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture):
+    tab_list, current_tab_idx = get_open_tabs(target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture)
+    return current_tab_idx
+
 
 # 現在のwindowのchromeブラウザのタブIDを取得する関数
 def get_open_tabs(target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture):

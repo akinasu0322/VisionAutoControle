@@ -3,14 +3,12 @@
     "commands" : [
         {
             "command" : "XYClick",
-            "target" : "900, 400",
-            "args" : [],
+            "args" : [{"x": "900", "y": "400"}],
             "description" : "touch to activate the window",
             "blocks" : []
         },
         {
             "command" : "ChangeTab",
-            "target" : "",
             "args" : [{"mode": "AbsoluteIndex", "value": "0"}],
             "description" : "",
             "blocks" : []
@@ -18,7 +16,7 @@
         {
             "command" : "Sleep",
             "target" : "",
-            "args" : ["1"],
+            "args" : [{"time": "1"}],
             "description" : "",
             "blocks" : []
         },

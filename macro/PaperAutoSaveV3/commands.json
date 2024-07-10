@@ -3,158 +3,144 @@
     "commands" : [
         {
             "command" : "GetInfo",
-            "target" : "paper_url",
-            "args" : ["CurrentTabURL"],
-            "description" : "Get original url of paper",
-            "blocks" : []
+            "args" : [{"information_type": "CurrentTabURL", "variable_name": "paper_url"}],
+            "description" : "Get original url of paper"
         },
         {
             "command" : "VisionClick",
-            "target" : "PaperPileIcon.png",
-            "args" : [],
-            "description" : "Click on PaperPileIcon",
-            "blocks" : []
+            "args" : [{"search_picture": "PaperPileIcon.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "description" : "Click on PaperPileIcon"
         },
         {
             "command" : "VisionClick",
-            "target" : "AddToPaperPile.png",
-            "args" : [],
-            "description" : "Click on PaperPileIcon",
-            "blocks" : []
-        },
-        {
-            "command" : "If",
-            "target" : "",
-            "args" : [
-                "'https://aclanthology' in '${paper_url}'", 
-                "'https://arxiv.org' in '${ paper_url }'"
-            ],
-            "description" : "Branch by website",
-            "blocks" : [
-                [
-                    {
-                        "command" : "VisionClick",
-                        "target" : "ACLPDFbutton2.png",
-                        "args" : [],
-                        "description" : "acl open pdf",
-                        "blocks" : []
-                    },
-                    {
-                        "command" : "VisionClick",
-                        "target" : "ACLPDFbutton2.png",
-                        "args" : [],
-                        "description" : "acl open pdf",
-                        "blocks" : []
-                    }
-                ],
-                [
-                    {
-                        "command" : "VisionClick",
-                        "target" : "ArxivPDFbutton.png",
-                        "args" : [],
-                        "description" : "arxiv open pdf",
-                        "blocks" : []
-                    },
-                    {
-                        "command" : "VisionClick",
-                        "target" : "ArxivPDFbutton.png",
-                        "args" : [],
-                        "description" : "arxiv open pdf",
-                        "blocks" : []
-                    }
-                ]
-            ]
-        },
-        {
-            "command" : "VisionClick",
-            "target" : "ReadableIcon.png",
-            "args" : [],
-            "description" : "Click on ReadableIcon",
-            "blocks" : []
+            "args" : [{"search_picture": "AddToPaperPile.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "description" : "Click on PaperPileIcon"
         },
         {
             "command" : "VisionWait",
-            "target" : "TransratedPageFutureChrome.png",
-            "args" : [3, 30],
-            "description" : "Wait for transration",
-            "blocks" : []
+            "args" : [{"search_picture": "PaperPileImported.png", "interval": "3", "time_limit": "30", "confidence": "0.9", "num_target_object": "1", "init_sleep_time": "1.0"}],
+            "description" : "Wait for import complete"
+        },
+        {
+            "command" : "If",
+            "args" : [
+                {
+                    "condition": "'https://aclanthology' in '${paper_url}'",
+                    "block": [
+                        {
+                            "command" : "VisionClick",
+                            "args" : [{"search_picture": "ACLPDFbutton.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+                            "description" : "acl open pdf"
+                        },
+                        {
+                            "command" : "VisionClick",
+                            "args" : [{"search_picture": "ACLPDFbutton.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+                            "description" : "acl open pdf"
+                        },
+                        {
+                            "command" : "Sleep",
+                            "args" : [{"time": "1"}],
+                            "description" : "Sleep"
+                        }
+                    ]
+                }, 
+                {
+                    "condition": "'https://arxiv.org' in '${ paper_url }'",
+                    "block": [
+                        {
+                            "command" : "VisionClick",
+                            "args" : [{"search_picture": "ArxivPDFbutton.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+                            "description" : "arxiv open pdf"
+                        },
+                        {
+                            "command" : "VisionClick",
+                            "args" : [{"search_picture": "ArxivPDFbutton.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+                            "description" : "arxiv open pdf"
+                        },
+                        {
+                            "command" : "Sleep",
+                            "args" : [{"time": "0.1"}],
+                            "description" : "Sleep"
+                        }
+                    ]
+                },
+                {
+                    "condition": "True",
+                    "block": [
+                        {
+                            "command" : "Error",
+                            "args" : [{"message": "This website is not supported"}],
+                            "description" : "Error"
+                        }
+                    ]
+                }
+            ],
+            "description" : "Branch by website"
+        },
+        {
+            "command" : "VisionClick",
+            "args" : [{"search_picture": "ReadableIcon.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "description" : "Click on ReadableIcon"
+        },
+        {
+            "command" : "VisionWait",
+            "args" : [{"search_picture": "TransratedPageFutureChrome.png", "interval": "3", "time_limit": "60", "confidence": "0.9", "num_target_object": "1", "init_sleep_time": "0.0"}],
+            "description" : "Wait for transration"
         },
         {
             "command" : "GetInfo",
-            "target" : "transrate_pdf_tab_id",
-            "args" : ["CurrentTabID"],
-            "description" : "Get transrate_pdf_tab_id",
-            "blocks" : []
+            "args" : [{"information_type": "CurrentTabIndex", "variable_name": "transrate_pdf_tab_index"}],
+            "description" : "Get transrate_pdf_tab_id"
         },
         {
             "command" : "VisionClick",
-            "target" : "PaperPileIcon.png",
-            "args" : [],
-            "description" : "Click on PaperPileIcon",
-            "blocks" : []
+            "args" : [{"search_picture": "PaperPileIcon.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "description" : "Click on PaperPileIcon"
         },
         {
             "command" : "VisionClick",
-            "target" : "OpenPaperPile.png",
-            "args" : [],
-            "description" : "Open paper pile",
-            "blocks" : []
+            "args" : [{"search_picture": "OpenPaperPile.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "description" : "Open paper pile"
         },
         {
             "command" : "VisionClick",
-            "target" : "PaperPileCheckBox.png",
-            "args" : ["vertical", 2],
-            "description" : "Select paper which I want to attach transrated pdf",
-            "blocks" : []
+            "args" : [{"search_picture": "PaperPileCheckBox.png", "select_axis": "vertical", "select_index": "1", "confidence": "0.9"}],
+            "description" : "Select paper which I want to attach transrated pdf"
         },
         {
             "command" : "ChangeTab",
-            "target" : "${ transrate_pdf_tab_id  }",
-            "args" : ["TabID"],
-            "description" : "Move to transrate pdf tab",
-            "blocks" : []
+            "args" : [{"information_type": "AbsoluteIndex", "tab_information": "${ transrate_pdf_tab_index  }"}],
+            "description" : "Move to transrate pdf tab"
         },
         {
             "command" : "VisionClick",
-            "target" : "PaperPileIcon.png",
-            "args" : [],
-            "description" : "Click on PaperPileIcon",
-            "blocks" : []
+            "args" : [{"search_picture": "PaperPileIcon.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "description" : "Click on PaperPileIcon"
         },
         {
             "command" : "VisionClick",
-            "target" : "PaperPileAttachToPaper.png",
-            "args" : [],
-            "description" : "Click on Attach To Paper button",
-            "blocks" : []
+            "args" : [{"search_picture": "PaperPileAttachToPaper.png", "select_axis": "", "select_index": "", "confidence": "0.9"}],
+            "description" : "Click on Attach To Paper button"
+        },
+        {
+            "command" : "VisionWait",
+            "args" : [{"search_picture": "PaperPileAttachComplete.png", "interval": "2", "time_limit": "30", "confidence": "0.9", "num_target_object": "1", "init_sleep_time": "0.0"}],
+            "description" : "Wait for attach complete"
         },
         {
             "command" : "VisionClick",
-            "target" : "OpenPaperPile.png",
-            "args" : [],
-            "description" : "Open paper pile",
-            "blocks" : []
+            "args" : [{"search_picture": "PaperPileCancellMainPDF.png", "select_axis": "vertical", "select_index": "1", "confidence": "0.9"}],
+            "description" : "Cancell main pdf"
+        },
+        {
+            "command" : "Sleep",
+            "args" : [{"time": "0.1"}],
+            "description" : "Sleep"
         },
         {
             "command" : "VisionClick",
-            "target" : "PaperPileAttachedFiles.png",
-            "args" : ["vertical", 1],
-            "description" : "Click on Attached Files Icon",
-            "blocks" : []
-        },
-        {
-            "command" : "VisionClick",
-            "target" : "PaperPileCancellMainPDF.png",
-            "args" : ["vertical", 2],
-            "description" : "Cancell main pdf",
-            "blocks" : []
-        },
-        {
-            "command" : "VisionClick",
-            "target" : "PaperPileSetAsMainPDF.png",
-            "args" : ["vertical", 1],
-            "description" : "Click on Set As Main PDF button",
-            "blocks" : []
+            "args" : [{"search_picture": "PaperPileSetAsMainPDF.png", "select_axis": "vertical", "select_index": "1", "confidence": "0.9"}],
+            "description" : "Click on Set As Main PDF button"
         }
     ]
 }

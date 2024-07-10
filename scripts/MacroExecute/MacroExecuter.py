@@ -81,12 +81,10 @@ class MacroExecuter:
 
 ################################ コマンド抽象クラス ################################
 class Command(ABC):
-    def __init__(self, command, target, args, description, code_blocks=[]):
+    def __init__(self, command, args, description):
         self.command:str = command
-        self.target:str = target
-        self.args:list[str] = args
+        self.args:list[dict[str, any]] = args
         self.description:str = description
-        self.code_blocks:list[str] = code_blocks
     
     @abstractmethod
     def execute(self, memory:BlockMemory):
@@ -96,47 +94,47 @@ class Command(ABC):
 
 class Error(Command):
     def execute(self, memory:BlockMemory):
-        print(self.target)
+        print(self.args[0]["message"])
         exit(1)
 
 
 class VisionClick(Command):
     def execute(self, memory:BlockMemory):
         # エラーチェック
-        if len(self.args) != 0 and len(self.args) != 2:
-            raise SyntaxError("VisionClick command must have 0 or 2 arguments.")
+        if len(self.args) != 1:
+            raise SyntaxError("VisionClick command must have 1 arguments.")
         # 画像ファイルの読み込み
-        template_path = f"macro/{memory.get_env['macro_name']}/PatternPictures/{self.target}"
-        gray_template_img = cv2.imread(template_path, cv2.IMREAD_GRAYSCALE)
-        target_img = ImageGrab.grab()
-        target_img = np.array(target_img)
-        gray_target_img = cv2.cvtColor(target_img, cv2.COLOR_BGR2GRAY)
+        template_path = f"macro/{memory.get_env('macro_name')}/PatternPictures/{self.args[0]['search_picture']}"
+        template_img = cv2.imread(template_path, cv2.IMREAD_COLOR)
+        target_img = cv2.cvtColor(np.array(ImageGrab.grab()), cv2.COLOR_RGB2BGR)
 
         # 画面キャプチャの取得
-        best_matches = find_best_matches(gray_template_img, gray_target_img, threshold=0.7)
+        best_matches = find_best_matches(template_img, target_img, threshold=float(self.args[0]["confidence"]))
         if best_matches == []:
             print("No matches found.")
-            raise Exception("No matches found.")
+            minimum_confidence = 0.5
+            minimum_best_matches = find_best_matches(template_img, target_img, threshold=minimum_confidence)
+            if minimum_best_matches == []:
+                raise Exception(f"No matches found. by using minimum confidence({minimum_confidence}).")
+            else:
+                show_detected_img(minimum_best_matches, target_img)
+                raise Exception(f"No matches found. by confidence({self.args[0]['confidence']}). However, by loosen confidence({minimum_confidence}), detected.")
         
         # クリック
         target_match = None
-        if len(self.args) == 0:
+        if self.args[0]["select_axis"] == "":
             target_match = best_matches[0]
-        elif len(self.args) == 2:
-            axis = self.args[0]
-            index = int(self.args[1])
-            if axis == "vertical":
-                best_matches = sorted(best_matches, key=lambda x: x[0][1])
-                target_match = best_matches[index]
-            elif axis == "horizontal":
-                best_matches = sorted(best_matches, key=lambda x: x[0][0])
-                target_match = best_matches[index]
-            else:
-                valid_axis = ["vertical", "horizontal"]
-                raise ValueError(f"Unknown axis. Valid axis are {valid_axis}.")
-        pt, w, h = target_match["pt"], target_match["size"][0], target_match["size"][1]
-        x, y = pt[0] + w // 2, pt[1] + h // 2
-        print(f"Clicking at ({x}, {y})")
+        elif self.args[0]["select_axis"] == "vertical":
+            best_matches = sorted(best_matches, key=lambda x: x["pt"][1])
+            target_match = best_matches[int(self.args[0]["select_index"])]
+        elif self.args[0]["select_axis"] == "horizontal":
+            best_matches = sorted(best_matches, key=lambda x: x["pt"][0])
+            target_match = best_matches[self.args[0]["select_index"]]
+        else:
+            valid_axis = ["", "vertical", "horizontal"]
+            raise ValueError(f"Unknown axis. Valid axis are {valid_axis}.")
+        pt, size = target_match["pt"], target_match["size"]
+        x, y = pt[0] + size[0] // 2, pt[1] + size[1] // 2
         time.sleep(0.01)
         abs_click(x, y)
         time.sleep(0.01)
@@ -145,26 +143,23 @@ class VisionClick(Command):
 
 class XYClick(Command):
     def execute(self, memory:BlockMemory):
-        x, y = map(int, self.target.replace("\s", "").split(","))
+        x, y = int(self.args[0]["x"]), int(self.args[0]["y"])
         abs_click(x, y)
 
 
 class If(Command):
     def execute(self, memory:BlockMemory):
         # 式の変数を実際の値に置換
-        conditions = self.args
-        replaced_conditions = []
-        for condition in conditions:
-            replaced_conditions.append(replace_val(condition, memory.all_dict()))
+        args = self.args
+        for i in range(len(args)):
+            args[i]["replaced_conditions"] = replace_val(args[i]["condition"], memory.all_dict())
         # 各条件の評価
-        eval_results = []
-        for condition in replaced_conditions:
-            eval_results.append(eval(condition))
-        eval_results.append(True) # elseに対応
+        for i in range(len(args)):
+            args[i]["eval_result"] = eval(args[i]["replaced_conditions"])
         # 適切な分岐の選択
-        for i, result in enumerate(eval_results):
-            if result:
-                valid_block = self.code_blocks[i]
+        for i in range(len(args)):
+            if args[i]["eval_result"]:
+                valid_block = args[i]["block"]
                 break
         else:
             raise UnexpectedSystemError("All branches are invalid. Please check the conditions or set \"else block\".")
@@ -180,15 +175,15 @@ class If(Command):
 class SetValue(Command):
     def execute(self, memory:BlockMemory):
         if len(self.args) != 1:
-            raise SyntaxError("SetValue command must have exactly one argument.")
-        memory.set_main(self.target, self.args[0])
+            raise SyntaxError("SetValue command must have exactly 1 argument.")
+        memory.set_main(self.args[0]["variable_name"], self.args[0]["value"])
 
 
 class Sleep(Command):
     def execute(self, memory:BlockMemory):
         if len(self.args) != 1:
             raise SyntaxError("Sleep command must have exactly 1 argument which is the time to sleep.")
-        sleep_time = float(self.args[0])
+        sleep_time = float(self.args[0]["time"])
         time.sleep(sleep_time)
 
 
@@ -199,38 +194,49 @@ class GetInfo(Command):
         if len(self.args) != 1:
             raise SyntaxError("GetInfo command must have exactly one argument which decides what information is needed.")
         # 情報取得
-        info_label = self.args[0]
-        save_name = self.target
+        info_type = self.args[0]["information_type"]
+        variable_name = self.args[0]["variable_name"]
         info = None
-        if info_label == "CurrentTabURL":
+        target_img = cv2.cvtColor(np.array(ImageGrab.grab()), cv2.COLOR_RGB2BGR)
+        separater_picture_path = memory.get_env('tab_separater_picture_path')
+        current_tab_left_picture_path = memory.get_env('current_tab_left_picture_path')
+        current_tab_right_picture_path = memory.get_env('current_tab_right_picture_path')
+        first_tab_is_current_tab_picture_path= memory.get_env('first_tab_is_current_tab_picture_path')
+        separater_picture = cv2.imread(separater_picture_path, cv2.IMREAD_COLOR)
+        current_tab_left_picture = cv2.imread(current_tab_left_picture_path, cv2.IMREAD_COLOR)
+        current_tab_right_picture = cv2.imread(current_tab_right_picture_path, cv2.IMREAD_COLOR)
+        first_tab_is_current_tab_picture = cv2.imread(first_tab_is_current_tab_picture_path, cv2.IMREAD_COLOR)
+
+        if info_type == "CurrentTabURL":
             info = get_current_tab_url()
-        elif info_label == "CurrentTabID":
-            info = get_current_tab_id()
+        elif info_type == "CurrentTabIndex":
+            info = get_current_tab_index(target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture)
         else:
-            valid_labels = ["CurrentTabURL", "CurrentTabID"]
-            raise ValueError(f"Unknown info label: {info_label}. Valid labels are {valid_labels}.")
+            valid_types = ["CurrentTabURL", "CurrentTabIndex"]
+            raise ValueError(f"Unknown info label: {info_type}. Valid labels are {valid_types}.")
         # メモリに保存
-        memory.set_main(save_name, info)
+        memory.set_main(variable_name, info)
 
 
 class VisionWait(Command):
     def execute(self, memory:BlockMemory):
         # エラーチェック
-        if len(self.args) != 2:
+        if len(self.args) != 1:
             raise SyntaxError("VisionWait command must have exactly two argument which decides the rest time of rejudge and the end time.")
-        rest_time = float(self.args[0])
-        end_time = float(self.args[1])
+        interval = float(self.args[0]["interval"])
+        time_limit = float(self.args[0]["time_limit"])
+        num_target = int(self.args[0]["num_target_object"])
+        init_sleep_time = float(self.args[0]["init_sleep_time"])
         # 画像ファイルの読み込み
-        template_path = f"macro/{memory.main['macro_name']}/PatternPictures/{self.target}"
-        gray_template_img = cv2.imread(template_path, cv2.IMREAD_GRAYSCALE)
-        for _ in range(int(end_time // rest_time)):
-            target_img = ImageGrab.grab()
-            target_img = np.array(target_img)
-            gray_target_img = cv2.cvtColor(target_img, cv2.COLOR_BGR2GRAY)
-            best_matches = find_best_matches(gray_template_img, gray_target_img, threshold=0.7)
-            if best_matches:
+        template_path = f"macro/{memory.get_env('macro_name')}/PatternPictures/{self.args[0]['search_picture']}"
+        template_img = cv2.imread(template_path, cv2.IMREAD_COLOR)
+        time.sleep(init_sleep_time)
+        for i in range(int(time_limit // interval)):
+            target_img = cv2.cvtColor(np.array(ImageGrab.grab()), cv2.COLOR_RGB2BGR)
+            best_matches = find_best_matches(template_img, target_img, threshold=float(self.args[0]["confidence"]))
+            if num_target == len(best_matches):
                 break
-            time.sleep(rest_time)
+            time.sleep(interval)
         else:
             raise Exception("No matches found.")
 
@@ -240,26 +246,24 @@ class ChangeTab(Command):
         # エラーチェック
         if len(self.args) != 1:
             raise SyntaxError("ChangeTab command must have exactly 1 arguments which is the pair of tab information and the type of tab information.")
-        info_type= self.args[0]["mode"]
-        tab_info = self.args[0]["value"]
+        info_type= self.args[0]["information_type"]
+        tab_info = self.args[0]["tab_information"]
         # タブ移動
-        valid_modes = ["AbsoluteIndex", "RelativeIndex"]
-        if info_type in valid_modes:
+        valid_types = ["AbsoluteIndex", "RelativeIndex"]
+        if info_type in valid_types:
             concreate_tab_info = int(replace_val(tab_info, memory.all_dict()))
-            target_img = ImageGrab.grab()
-            target_img = np.array(target_img)
-            gray_target_img = cv2.cvtColor(target_img, cv2.COLOR_BGR2GRAY)
+            target_img = cv2.cvtColor(np.array(ImageGrab.grab()), cv2.COLOR_RGB2BGR)
             separater_picture_path = memory.get_env('tab_separater_picture_path')
             current_tab_left_picture_path = memory.get_env('current_tab_left_picture_path')
             current_tab_right_picture_path = memory.get_env('current_tab_right_picture_path')
             first_tab_is_current_tab_picture_path= memory.get_env('first_tab_is_current_tab_picture_path')
-            separater_picture = cv2.imread(separater_picture_path, cv2.IMREAD_GRAYSCALE)
-            current_tab_left_picture = cv2.imread(current_tab_left_picture_path, cv2.IMREAD_GRAYSCALE)
-            current_tab_right_picture = cv2.imread(current_tab_right_picture_path, cv2.IMREAD_GRAYSCALE)
-            first_tab_is_current_tab_picture = cv2.imread(first_tab_is_current_tab_picture_path, cv2.IMREAD_GRAYSCALE)
-            change_tab(concreate_tab_info, info_type, gray_target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture)
+            separater_picture = cv2.imread(separater_picture_path, cv2.IMREAD_COLOR)
+            current_tab_left_picture = cv2.imread(current_tab_left_picture_path, cv2.IMREAD_COLOR)
+            current_tab_right_picture = cv2.imread(current_tab_right_picture_path, cv2.IMREAD_COLOR)
+            first_tab_is_current_tab_picture = cv2.imread(first_tab_is_current_tab_picture_path, cv2.IMREAD_COLOR)
+            change_tab(concreate_tab_info, info_type, target_img, separater_picture, current_tab_left_picture, current_tab_right_picture, first_tab_is_current_tab_picture)
         else:
-            raise ValueError(f"Unknown tab decision: {info_type}. Valid decisions are {valid_modes}.")
+            raise ValueError(f"Unknown tab decision: {info_type}. Valid decisions are {valid_types}.")
 
 
 
@@ -280,9 +284,7 @@ command_list = {
 
 def create_command(command_dict:dict[str, any]):
     command = command_dict["command"]
-    target = command_dict["target"]
     args = command_dict["args"]
     description = command_dict["description"]
-    blocks = command_dict["blocks"]
-    return command_list[command](command, target, args, description, blocks)
+    return command_list[command](command, args, description)
     
