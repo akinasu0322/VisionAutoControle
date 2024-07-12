@@ -132,11 +132,11 @@ class VisionClick(Command):
         if self.args[0]["select_axis"] == "":
             target_match = all_best_matches[0]
         elif self.args[0]["select_axis"] == "vertical":
-            best_matches = sorted(best_matches, key=lambda x: x["pt"][1])
-            target_match = all_best_matches[int(self.args[0]["select_index"])]
+            all_best_matches_sorted = sorted(all_best_matches, key=lambda x: x["pt"][1])
+            target_match = all_best_matches_sorted[int(self.args[0]["select_index"])]
         elif self.args[0]["select_axis"] == "horizontal":
-            best_matches = sorted(best_matches, key=lambda x: x["pt"][0])
-            target_match = all_best_matches[self.args[0]["select_index"]]
+            all_best_matches_sorted = sorted(all_best_matches, key=lambda x: x["pt"][0])
+            target_match = all_best_matches_sorted[self.args[0]["select_index"]]
         else:
             valid_axis = ["", "vertical", "horizontal"]
             raise ValueError(f"Unknown axis. Valid axis are {valid_axis}.")
@@ -232,7 +232,8 @@ class VisionWait(Command):
             raise SyntaxError("VisionWait command must have exactly two argument which decides the rest time of rejudge and the end time.")
         interval = float(self.args[0]["interval"])
         time_limit = float(self.args[0]["time_limit"])
-        num_target = int(self.args[0]["num_target_object"])
+        range_list = self.args[0]["num_target_object_range"]
+        range_list = [parse_range(range_str) for range_str in range_list]
         init_sleep_time = float(self.args[0]["init_sleep_time"])
         # 画像ファイルの読み込み
         template_path = f"macro/{memory.get_env('macro_name')}/PatternPictures/{self.args[0]['search_picture']}"
@@ -241,7 +242,7 @@ class VisionWait(Command):
         for i in range(int(time_limit // interval)):
             target_img = cv2.cvtColor(np.array(ImageGrab.grab()), cv2.COLOR_RGB2BGR)
             best_matches = find_best_matches(template_img, target_img, threshold=float(self.args[0]["confidence"]))
-            if num_target == len(best_matches):
+            if check_num_in_range(len(best_matches), range_list):
                 break
             time.sleep(interval)
         else:

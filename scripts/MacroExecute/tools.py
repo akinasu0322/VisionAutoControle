@@ -282,3 +282,22 @@ def change_tab(tab_information:int, info_type: str, target_img, separater_pictur
         valid_info_types = ["RelativeIndex", "AbsoluteIndex"]
         raise ValueError(f"Unknown tab information type: {info_type}. Valid decisions are {valid_info_types}.")
 
+
+def parse_range(range_str:str):
+    if '-' in range_str:
+        start, end = range_str.split('-')
+        return (int(start), int(end))
+    elif range_str.endswith('+'):
+        start = range_str[:-1]
+        return (int(start), None)
+    elif range_str.isdigit():
+        return (int(range_str), int(range_str))
+    else:
+        raise ValueError("Invalid range format")
+
+
+def check_num_in_range(num_target_object:int, range_list:list[tuple[int, int]]):
+    check_num_in_one_range = lambda num, start, end: (end is None and start <= num) or (start <= num <= end)
+    if any([check_num_in_one_range(num_target_object, start, end) for start, end in range_list]):
+        return True
+    return False

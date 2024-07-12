@@ -18,7 +18,7 @@
         },
         {
             "command" : "VisionWait",
-            "args" : [{"search_picture": "PaperPileImported.png", "interval": "3", "time_limit": "30", "confidence": "0.9", "num_target_object": "1", "init_sleep_time": "1.0"}],
+            "args" : [{"search_picture": "PaperPileImported.png", "interval": "3", "time_limit": "30", "confidence": "0.9", "num_target_object_range": ["1"], "init_sleep_time": "1.0"}],
             "description" : "Wait for import complete"
         },
         {
@@ -79,7 +79,7 @@
         },
         {
             "command" : "VisionWait",
-            "args" : [{"search_picture": "TransratedPageFutureChrome.png", "interval": "3", "time_limit": "60", "confidence": "0.9", "num_target_object": "1", "init_sleep_time": "0.0"}],
+            "args" : [{"search_picture": "TransratedPageFutureChrome.png", "interval": "3", "time_limit": "60", "confidence": "0.9", "num_target_object_range": ["1"], "init_sleep_time": "0.0"}],
             "description" : "Wait for transration"
         },
         {
@@ -98,8 +98,13 @@
             "description" : "Open paper pile"
         },
         {
+            "command" : "VisionWait",
+            "args" : [{"search_picture": "PaperPileCheckBox.png", "interval": "1", "time_limit": "10", "confidence": "0.9", "num_target_object_range": ["1+"], "init_sleep_time": "1.0"}],
+            "description" : "wait for Opening paper pile"
+        },
+        {
             "command" : "VisionClick",
-            "args" : [{"search_pictures": ["PaperPileCheckBox.png"], "select_axis": "vertical", "select_index": "1", "confidence": "0.9"}],
+            "args" : [{"search_pictures": ["PaperPileCheckBox.png"], "select_axis": "vertical", "select_index": "1", "confidence": "0.8"}],
             "description" : "Select paper which I want to attach transrated pdf"
         },
         {
@@ -119,7 +124,7 @@
         },
         {
             "command" : "VisionWait",
-            "args" : [{"search_picture": "PaperPileAttachComplete.png", "interval": "2", "time_limit": "30", "confidence": "0.9", "num_target_object": "1", "init_sleep_time": "0.0"}],
+            "args" : [{"search_picture": "PaperPileAttachComplete.png", "interval": "2", "time_limit": "30", "confidence": "0.9", "num_target_object_range": ["1"], "init_sleep_time": "0.0"}],
             "description" : "Wait for attach complete"
         },
         {
